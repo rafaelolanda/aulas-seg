@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz — Aula 1</title>
+<style>
+  :root{
+    --navy:#273E74; --red:#C74148; --yellow:#FDBF50; --blue:#008DD0;
+    --orange:#F58634; --green:#009462; --dark:#2B2B2B; --gray:#6B7280;
+    --bg:#F4F6FA; --card:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; background:var(--bg); color:var(--dark);
+    font-family: Calibri, Arial, sans-serif;
+    display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .card{
+    background:var(--card); border-radius:16px; box-shadow:0 10px 30px rgba(39,62,116,0.12);
+    width:100%; max-width:560px; padding:32px 28px;
+  }
+  h1{ color:var(--navy); font-size:1.5rem; margin:0 0 6px; }
+  .sub{ color:var(--gray); font-size:0.95rem; margin:0 0 24px; }
+  input[type=text]{
+    width:100%; padding:12px 14px; border:1.5px solid #D5D9E0; border-radius:8px;
+    font-size:1rem; font-family:inherit; margin-bottom:16px;
+  }
+  input[type=text]:focus{ outline:none; border-color:var(--blue); }
+  button{
+    background:var(--navy); color:#fff; border:none; border-radius:8px;
+    padding:13px 20px; font-size:1rem; font-weight:600; cursor:pointer; width:100%;
+    font-family:inherit; transition:opacity .15s;
+  }
+  button:hover{ opacity:0.9; }
+  button:disabled{ opacity:0.5; cursor:not-allowed; }
+  .progress{
+    height:6px; background:#E7EAF1; border-radius:3px; margin-bottom:20px; overflow:hidden;
+  }
+  .progress-bar{ height:100%; background:var(--blue); border-radius:3px; transition:width .25s; }
+  .qnum{ color:var(--gray); font-size:0.85rem; font-weight:600; margin-bottom:6px; letter-spacing:0.03em; }
+  .qtext{ font-size:1.15rem; font-weight:600; color:var(--navy); margin-bottom:18px; line-height:1.4; }
+  .opt{
+    display:block; width:100%; text-align:left; background:#fff; border:1.5px solid #D5D9E0;
+    border-radius:8px; padding:12px 14px; margin-bottom:10px; font-size:0.98rem; cursor:pointer;
+    font-family:inherit; color:var(--dark); transition:border-color .15s, background .15s;
+  }
+  .opt:hover:not(:disabled){ border-color:var(--blue); background:#F0F7FC; }
+  .opt.correct{ border-color:var(--green); background:#E8F6EF; color:#0b5c3c; font-weight:600; }
+  .opt.wrong{ border-color:var(--red); background:#FBEAEA; color:#8a2a2f; font-weight:600; }
+  .opt:disabled{ cursor:default; }
+  .feedback{ font-size:0.9rem; margin:4px 0 18px; min-height:1.2em; font-weight:600; }
+  .feedback.correct{ color:var(--green); }
+  .feedback.wrong{ color:var(--red); }
+  .center{ text-align:center; }
+  .score{ font-size:2.6rem; font-weight:700; color:var(--navy); margin:8px 0; }
+  .hidden{ display:none; }
+  .logo-row{ display:flex; align-items:center; gap:8px; margin-bottom:18px; }
+  .dot{ width:10px; height:10px; border-radius:50%; }
+  .status{ font-size:0.85rem; color:var(--gray); margin-top:14px; text-align:center; }
+</style>
+</head>
+<body>
+
+<div class="card">
+
+  <!-- TELA 1: NOME -->
+  <div id="screen-start">
+    <h1>Quiz — Aula 1</h1>
+    <p class="sub">História e Fundamentos da Programação · Programação Estruturada</p>
+    <input type="text" id="nomeAluno" placeholder="Digite seu nome completo" autocomplete="off">
+    <button id="btnStart">Começar o quiz</button>
+  </div>
+
+  <!-- TELA 2: PERGUNTAS -->
+  <div id="screen-quiz" class="hidden">
+    <div class="progress"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+    <div class="qnum" id="qNum">PERGUNTA 1 DE 10</div>
+    <div class="qtext" id="qText"></div>
+    <div id="qOptions"></div>
+    <div class="feedback" id="qFeedback"></div>
+    <button id="btnNext" disabled>Próxima pergunta</button>
+  </div>
+
+  <!-- TELA 3: RESULTADO -->
+  <div id="screen-result" class="hidden center">
+    <h1>Resultado</h1>
+    <p class="sub" id="resultNome"></p>
+    <div class="score" id="resultScore"></div>
+    <p class="sub" id="resultMsg"></p>
+    <button id="btnSend">Enviar resultado</button>
+    <div class="status" id="sendStatus"></div>
+  </div>
+
+</div>
+
+<script>
+
+const APPS_SCRIPT_URL =  "";
+
+const QUESTIONS = [
+  {
+    q: "O que é abstração, em programação?",
+    opts: [
+      "Esconder detalhes complexos e mostrar só o que importa para quem está usando",
+      "Escrever o código o mais curto possível",
+      "Usar apenas linguagens de baixo nível",
+      "Remover comentários do código"
+    ],
+    correct: 0
+  },
+  {
+    q: "Qual das opções abaixo é a definição de algoritmo?",
+    opts: [
+      "Um programa já compilado e pronto para rodar",
+      "Uma sequência finita e ordenada de passos para resolver um problema",
+      "Um erro de sintaxe no código",
+      "Um tipo de dado usado em C"
+    ],
+    correct: 1
+  },
+  {
+    q: "Qual é a ordem correta, do mais abstrato ao código real?",
+    opts: [
+      "Código → fluxograma → pseudocódigo → algoritmo",
+      "Pseudocódigo → algoritmo → código → fluxograma",
+      "Algoritmo → pseudocódigo → fluxograma → código",
+      "Fluxograma → código → algoritmo → pseudocódigo"
+    ],
+    correct: 2
+  },
+  {
+    q: "Sobre baixo nível vs alto nível, qual afirmação está correta?",
+    opts: [
+      "Baixo nível dá mais controle sobre o hardware; alto nível dá mais produtividade",
+      "Alto nível dá mais controle sobre o hardware; baixo nível dá mais produtividade",
+      "Os dois níveis são exatamente iguais em portabilidade",
+      "Linguagem de alto nível não pode ser compilada"
+    ],
+    correct: 0
+  },
+  {
+    q: "A linguagem Pascal foi criada por quem, e com qual propósito principal?",
+    opts: [
+      "Dennis Ritchie, para programar sistemas operacionais",
+      "Niklaus Wirth, especificamente para ensinar programação estruturada",
+      "Guido van Rossum, para automação de tarefas",
+      "Ada Lovelace, para máquinas analíticas"
+    ],
+    correct: 1
+  },
+  {
+    q: "Quais são os 3 pilares da programação estruturada (teorema de Böhm–Jacopini)?",
+    opts: [
+      "Herança, polimorfismo e encapsulamento",
+      "Frontend, backend e API",
+      "Sequência, decisão (seleção) e repetição",
+      "Compilação, interpretação e execução"
+    ],
+    correct: 2
+  },
+  {
+    q: "Na programação procedural, o programa é organizado principalmente em torno de:",
+    opts: [
+      "Objetos que combinam dados e comportamento",
+      "Funções que operam sobre dados",
+      "Tabelas de banco de dados",
+      "Páginas HTML"
+    ],
+    correct: 1
+  },
+  {
+    q: "C e Pascal, as linguagens usadas nesta disciplina, são linguagens:",
+    opts: [
+      "Interpretadas",
+      "Compiladas",
+      "Que não existem mais no mercado",
+      "Orientadas a objetos por padrão"
+    ],
+    correct: 1
+  },
+  {
+    q: "Na etapa de análise sintática de um compilador, o que é verificado?",
+    opts: [
+      "Se o programa vai rodar rápido",
+      "Se os tokens seguem a gramática (as regras de escrita) da linguagem",
+      "Se as variáveis têm nomes bonitos",
+      "Se o computador tem memória suficiente"
+    ],
+    correct: 1
+  },
+  {
+    q: "Um interpretador, diferente de um compilador, executa o código:",
+    opts: [
+      "Gerando sempre um executável separado antes de rodar",
+      "Linha a linha (ou instrução a instrução), em tempo de execução",
+      "Somente em linguagens de baixo nível",
+      "Sem nunca analisar a sintaxe"
+    ],
+    correct: 1
+  }
+];
+
+let current = 0;
+let score = 0;
+let nome = "";
+const answers = [];
+
+const screenStart = document.getElementById("screen-start");
+const screenQuiz = document.getElementById("screen-quiz");
+const screenResult = document.getElementById("screen-result");
+
+document.getElementById("btnStart").addEventListener("click", () => {
+  const val = document.getElementById("nomeAluno").value.trim();
+  if (!val) { document.getElementById("nomeAluno").focus(); return; }
+  nome = val;
+  screenStart.classList.add("hidden");
+  screenQuiz.classList.remove("hidden");
+  renderQuestion();
+});
+
+function renderQuestion() {
+  const q = QUESTIONS[current];
+  document.getElementById("qNum").textContent = `PERGUNTA ${current + 1} DE ${QUESTIONS.length}`;
+  document.getElementById("qText").textContent = q.q;
+  document.getElementById("progressBar").style.width = `${(current / QUESTIONS.length) * 100}%`;
+  document.getElementById("qFeedback").textContent = "";
+  document.getElementById("qFeedback").className = "feedback";
+  document.getElementById("btnNext").disabled = true;
+
+  const optsDiv = document.getElementById("qOptions");
+  optsDiv.innerHTML = "";
+  q.opts.forEach((optText, i) => {
+    const btn = document.createElement("button");
+    btn.className = "opt";
+    btn.textContent = optText;
+    btn.addEventListener("click", () => selectAnswer(i));
+    optsDiv.appendChild(btn);
+  });
+}
+
+function selectAnswer(i) {
+  const q = QUESTIONS[current];
+  const optButtons = document.querySelectorAll("#qOptions .opt");
+  optButtons.forEach(b => b.disabled = true);
+
+  const isCorrect = i === q.correct;
+  if (isCorrect) score++;
+  answers.push({ pergunta: q.q, respondida: q.opts[i], correta: isCorrect });
+
+  optButtons[i].classList.add(isCorrect ? "correct" : "wrong");
+  if (!isCorrect) optButtons[q.correct].classList.add("correct");
+
+  const fb = document.getElementById("qFeedback");
+  fb.textContent = isCorrect ? "Certo!" : `Errado — a resposta certa era: "${q.opts[q.correct]}"`;
+  fb.className = "feedback " + (isCorrect ? "correct" : "wrong");
+
+  document.getElementById("btnNext").disabled = false;
+}
+
+document.getElementById("btnNext").addEventListener("click", () => {
+  current++;
+  if (current < QUESTIONS.length) {
+    renderQuestion();
+  } else {
+    showResult();
+  }
+});
+
+function showResult() {
+  screenQuiz.classList.add("hidden");
+  screenResult.classList.remove("hidden");
+  document.getElementById("resultNome").textContent = nome;
+  document.getElementById("resultScore").textContent = `${score} / ${QUESTIONS.length}`;
+  const pct = score / QUESTIONS.length;
+  let msg = "Vamos revisar juntos os pontos que passaram batido.";
+  if (pct >= 0.8) msg = "Mandou muito bem!";
+  else if (pct >= 0.5) msg = "Bom começo — vale revisar alguns pontos.";
+  document.getElementById("resultMsg").textContent = msg;
+}
+
+document.getElementById("btnSend").addEventListener("click", () => {
+  const btn = document.getElementById("btnSend");
+  const status = document.getElementById("sendStatus");
+  btn.disabled = true;
+  status.textContent = "Enviando...";
+
+  const payload = {
+    nome: nome,
+    acertos: score,
+    total: QUESTIONS.length,
+    respostas: JSON.stringify(answers),
+    dataHora: new Date().toISOString()
+  };
+
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf("COLE_AQUI") !== -1) {
+    status.textContent = "URL do Apps Script não configurada — resultado não foi salvo (veja o guia de setup).";
+    btn.disabled = false;
+    return;
+  }
+
+  fetch(APPS_SCRIPT_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload)
+  }).then(() => {
+    status.textContent = "Resultado enviado! Obrigado, " + nome + ".";
+    btn.textContent = "Enviado ✓";
+  }).catch(() => {
+    status.textContent = "Não foi possível enviar. Verifique sua conexão e tente de novo.";
+    btn.disabled = false;
+  });
+});
+</script>
+
+</body>
+</html>
